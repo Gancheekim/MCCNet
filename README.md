@@ -31,6 +31,10 @@ Please download them and put them into the floder  ./experiments/  <br>
 ```
 python test_video.py  --content_dir input/content/ --style_dir input/style/    --output out
 ```
+or with single content image and single style image:
+```
+python test_video.py  --content input/content/content_image --style input/style/style_image    --output out
+```
 ### Training  
 Traing set is WikiArt collected from [WIKIART](https://www.kaggle.com/c/painter-by-numbers )  <br>  
 Testing set is COCO2014  <br>  

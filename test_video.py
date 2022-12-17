@@ -12,6 +12,7 @@ import net as net
 import numpy as np
 import cv2
 import yaml
+import matplotlib.pyplot as plt
 
 #读取文件函数
 def get_files(img_dir):
@@ -151,17 +152,32 @@ def load_video(content_path,style_path, outfile):
     height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)  # 获得帧宽和帧高
     fps = int(rate)
 
+    # frame dimension must be factor of 8
+    unit = 8
+    pad = width % unit
+    if pad > 0:
+        width += (unit-pad)
+    pad = height % unit
+    if pad > 0: 
+        height += (unit-pad)
+    print(width)
+    print(height)
+
     video_name = outfile + '/{:s}_stylized_{:s}{:s}'.format(
         splitext(basename(content_path))[0], splitext(basename(style_path))[0], '.mp4')
 
-    videoWriter = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc('D', 'I', 'V', 'X'), fps,
-                                  (int(width), int(height)))
+    videoWriter = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*"mp4v"), fps,
+                                  (int(width), int(height)))    
+
     return video,videoWriter
 #存储视频
 def save_frame(output, videoWriter):
     output = output * 255 + 0.5
-    output = torch.uint8(torch.clamp(output, 0, 255).permute(1, 2, 0)).numpy()
+    # output = torch.uint8(torch.clamp(output, 0, 255).permute(1, 2, 0)).numpy()
+    output = torch.clamp(output, 0, 255).permute(1, 2, 0).to(torch.uint8).numpy()
     output = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
+    # plt.imshow(output)
+    # plt.show()
     videoWriter.write(output)  # 写入帧图
 
 #视频风格化
@@ -177,7 +193,7 @@ def process_video(content_path, style_path, outfile):
         if j % 1 == False:
             # 对每一帧进行风格化。
             style = Image.open(style_path)
-            content = Image.fromarray(cv2.cvColor(frame, cv2.COLOR_BGR2RGB))
+            content = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
             output = image_process(frame, style)
             # 对风格化后的结果进行额外处理，以存储到视频中
             save_frame(output, videoWriter)
@@ -244,6 +260,7 @@ if __name__ == '__main__':
     alpha = args.a
     output_path = args.output
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f'using {device}...')
 
     decoder = net.decoder
     vgg = net.vgg
